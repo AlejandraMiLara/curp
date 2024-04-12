@@ -25,6 +25,7 @@ void genera_curp(char curp[], char primer_apellido[], char segundo_apellido[], c
 void imprimir_curp(char curp[]);
 
 int excepcion_mariajose(char primer_nombre[]);
+int excepcion_compuestos(char primer_apellido[], char segundo_apellido[], char primer_nombre[]);
 
 //  *** DESARROLLO DE LAS FUNCIONES  ******
 //*********************//
@@ -151,74 +152,129 @@ void comenzar(char curp[], char primer_apellido[], char segundo_apellido[], char
 
 //*********************//
 
-int excepcion_mariajose(char primer_nombre[])
+int excepcion_mariajose(char texto[])
 {
-    if (strcmp(primer_nombre, "MARIA") == 0 || strcmp(primer_nombre, "MARXA") == 0 || strcmp(primer_nombre, "MA.") == 0 || strcmp(primer_nombre, "MA") == 0 || strcmp(primer_nombre, "M.") == 0 || strcmp(primer_nombre, "M") == 0 || strcmp(primer_nombre, "JOSE") == 0 || strcmp(primer_nombre, "JOSX") == 0 || strcmp(primer_nombre, "J.") == 0 || strcmp(primer_nombre, "J") == 0) {
-        return 1; // excepcion
+    char excepciones[][10] = {"MARIA", "MARXA", "MA.", "MA", "M.", "M", "JOSE", "JOSX", "J.", "J"};
+    int num_excepciones = sizeof(excepciones) / sizeof(excepciones[0]);
+
+    for (int i = 0; i < num_excepciones; i++)
+    {
+        if (strcmp(texto, excepciones[i]) == 0)
+        {
+            return 1; // excepcion encontrada
+        }
     }
-    return 0; // No excepcion
+
+    return 0; // no es una excepcion
 }
 
 
 
-//*********************//
-
-void imprimir_curp(char curp[])
+int excepcion_compuestos(char texto[])
 {
-        printf("\n");
-        printf("|-------------------------------------------------------------------------------------------- |\n");
-        printf("|                                                                                             |\n");
-        printf("|        C U R P :  %s                                                         |\n", curp);
-        printf("|                                                                                             |\n");
-        printf("|-------------------------------------------------------------------------------------------- |\n");
-}
+    char excepciones[][10] = {"DA", "DAS", "DE", "DEL", "DER", "DI", "DIE", "DD", "Y", "EL", "LAS", "LE", "LES", "MAC", "MC", "VAN", "VON"};
+    int num_excepciones = sizeof(excepciones) / sizeof(excepciones[0]);
 
+    for (int i = 0; i < num_excepciones; i++)
+    {
+        if (strcmp(texto, excepciones[i]) == 0)
+        {
+            return 1; // excepcion encontrada
+        }
+    }
+
+    return 0; // no es una excepcion
+}
 
 
 //*********************//
 
 void genera_curp(char curp[], char primer_apellido[], char segundo_apellido[], char primer_nombre[], char segundo_nombre[], char fecha[], int cod_estado, char estado[], int cod_sexo, char sexo[], char cat_die_i[], char diescisiete_i[], char diesciocho_i[])
 {
-    curp[0] = primer_apellido[0];
-    curp[1] = primer_apellido[1];
+    // Identificar posiciones vacías en el apellido compuesto
+    int posiciones_vacias_apellido[10];
+    int cont = 0;
 
-    curp[2] = segundo_apellido[0];
-
-    if (excepcion_mariajose(primer_nombre))
+    for (int i = 0; primer_apellido[i] != '\0'; i++)
     {
-        curp[3] = segundo_nombre[0];
+        if (primer_apellido[i] == ' ')
+        {
+            posiciones_vacias_apellido[cont] = i;
+            cont++;
+        }
     }
-    
+
+    // Si hay posiciones vacías, el apellido es compuesto
+    if (cont > 0)
+    {
+        int inicio = 0;
+
+        // Dividir el apellido en partes basadas en las posiciones vacías
+        for (int i = 0; i <= cont; i++)
+        {
+            char apellido_parte[100];
+            
+            for(int j = inicio; j < posiciones_vacias_apellido[cont]; j++)
+            {
+                apellido_parte[j] = primer_apellido[j];
+            }
+
+            //analizar si coincide el apellidoparte con una exc de la lista
+            // en caso de coincidir el programa debe avanzar normalmente
+            //caso contrario debe detenerse pues encontro una palabra
+            //adecuada para usar
+
+            if(inicio = 0)
+            {
+                inicio = posiciones_vacias_apellido[0];
+            }
+
+            else
+            {
+                inicio = 0;
+            }
+
+        }
+    }
     else
     {
+        // Si no hay posiciones vacías, el apellido no es compuesto
+        curp[0] = primer_apellido[0];
+        curp[1] = primer_apellido[1];
+    }
+
+    // Continuar con el segundo apellido
+    curp[2] = segundo_apellido[0];
+
+    // Verificar si el primer nombre está en la lista de excepciones para el segundo nombre
+    if (excepcion_mariajose(primer_nombre))
+    {
+        // Si el primer nombre está en la lista de excepciones, usar el segundo nombre
+        curp[3] = segundo_nombre[0];
+    }
+    else
+    {
+        // Si no está en la lista de excepciones, usar el primer nombre
         curp[3] = primer_nombre[0];
     }
 
+    // Completar el resto de la CURP
     curp[4] = fecha[8];
     curp[5] = fecha[9];
-
     curp[6] = fecha[3];
     curp[7] = fecha[4];
-
     curp[8] = fecha[0];
     curp[9] = fecha[1];
-
     curp[10] = sexo[0];
-
     curp[11] = estado[0];
     curp[12] = estado[1];
-
     curp[13] = cat_die_i[0];
     curp[14] = cat_die_i[1];
     curp[15] = cat_die_i[2];
-
     curp[16] = diescisiete_i[0];
-
     curp[17] = diesciocho_i[0];
-
     curp[18] = '\0';
 }
-
 
 
 //*********************//
@@ -638,6 +694,19 @@ int valitext(char text[])
 }
 
 //*********************//
+
+
+
+void imprimir_curp(char curp[])
+{
+        printf("\n");
+        printf("|-------------------------------------------------------------------------------------------- |\n");
+        printf("|                                                                                             |\n");
+        printf("|        C U R P :  %s                                                         |\n", curp);
+        printf("|                                                                                             |\n");
+        printf("|-------------------------------------------------------------------------------------------- |\n");
+}
+
 
 void titulo()
 {
