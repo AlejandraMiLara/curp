@@ -26,6 +26,12 @@ void imprimir_curp(char curp[]);
 
 int excepcion_mariajose(char primer_nombre[]);
 int excepcion_compuestos(char primer_apellido[], char segundo_apellido[], char primer_nombre[]);
+int excepcion_altisonantes(char curp[]);
+
+int verifica_vocal(char text[]);
+int verifica_vacio(char text[]);
+int verifica_xxx(char curp[]);
+
 
 //  *** DESARROLLO DE LAS FUNCIONES  ******
 //*********************//
@@ -63,6 +69,7 @@ void menu()
     char cat_die_i[4];
     char diescisiete_i[5];
     char diesciocho_i[5];
+
 
     do
     {
@@ -136,7 +143,7 @@ void comenzar(char curp[], char primer_apellido[], char segundo_apellido[], char
     mensajeria(7);
     valisexo(cod_sexo, sexo);
 
-    cat_die(primer_apellido, segundo_apellido, primer_nombre, cat_die_i); //14-16
+    cat_die(primer_apellido, segundo_apellido, primer_nombre, cat_die_i); 
     diescisiete(fecha, diescisiete_i);
     diesciocho(fecha, diesciocho_i);
 
@@ -145,8 +152,9 @@ void comenzar(char curp[], char primer_apellido[], char segundo_apellido[], char
     cls();
     titulo();
     imprimir_curp(curp);
-    pause();
 
+
+    pause();
 }
 
 
@@ -172,7 +180,7 @@ int excepcion_mariajose(char texto[])
 
 int excepcion_compuestos(char texto[])
 {
-    char excepciones[][10] = {"DA", "DAS", "DE", "DEL", "DER", "DI", "DIE", "DD", "Y", "EL", "LAS", "LE", "LES", "MAC", "MC", "VAN", "VON"};
+    char excepciones[][20] = {"DA", "LOS", "LA","DAS", "DE", "DEL", "DER", "DI", "DIE", "DD", "Y", "EL", "LAS", "LE", "LES", "MAC", "MC", "VAN", "VON"};
     int num_excepciones = sizeof(excepciones) / sizeof(excepciones[0]);
 
     for (int i = 0; i < num_excepciones; i++)
@@ -186,65 +194,174 @@ int excepcion_compuestos(char texto[])
     return 0; // no es una excepcion
 }
 
+int excepcion_altisonantes(char curp[])
+{
+    char lista[][5] = {
+        "BUEI", "BUEY", "CACA", "CACO", "CAGA", "CAGO", "CAKA", "CAKO",
+        "COGE", "COJA", "COJE", "COJI", "COJO", "CULO", "FETO", "GUEY",
+        "JOTO", "KACA", "KACO", "KAGA", "KAGO", "KOGE", "KOJO", "KAKA",
+        "KULO", "MAME", "MAMO", "MEAR", "MEAS", "MEON", "MION", "MOCO",
+        "MULA", "PEDA", "PEDO", "PENE", "PUTA", "PUTO", "QULO", "RATA",
+        "RUIN"
+    };
+
+    int num_palabras = sizeof(lista) / sizeof(lista[0]);
+
+    for (int i = 0; i < num_palabras; i++)
+    {
+        if (strncmp(curp, lista[i], 4) == 0)
+        {
+            return 1; // Es una palabra altisonante
+        }
+    }
+
+    return 0; // No es una palabra altisonante
+}
+
 
 //*********************//
 
+
 void genera_curp(char curp[], char primer_apellido[], char segundo_apellido[], char primer_nombre[], char segundo_nombre[], char fecha[], int cod_estado, char estado[], int cod_sexo, char sexo[], char cat_die_i[], char diescisiete_i[], char diesciocho_i[])
 {
-    // Identificar posiciones vacías en el apellido compuesto
-    int posiciones_vacias_apellido[10];
-    int cont = 0;
+    
+    //POSICION 0 Y 1
+    //corresponde a los dos primeros elementos del primer apellido
 
-    for (int i = 0; primer_apellido[i] != '\0'; i++)
+    if(!verifica_vacio(primer_apellido))
     {
-        if (primer_apellido[i] == ' ')
+        // Identificar posiciones vacias en el apellido compuesto
+        int posiciones_vacias_apellido[10];
+        int cont = 0;
+
+        for (int i = 0; primer_apellido[i] != '\0'; i++)
         {
-            posiciones_vacias_apellido[cont] = i;
-            cont++;
+            if (primer_apellido[i] == ' ')
+            {
+                posiciones_vacias_apellido[cont] = i;
+                cont++;
+            }
+        }
+
+        // Si hay posiciones vacias es compuesto
+        if (cont > 0)
+        {
+            int inicio = 0;
+            char apellido_parte[100] = {0}; 
+
+            // Dividir el apellido en partes basadas en las posiciones vacias
+            for (int i = 0; i <= cont; i++)
+            {
+                int fin = (i == cont ? strlen(primer_apellido) : posiciones_vacias_apellido[i]);
+
+                for(int j = inicio; j < fin; j++)
+                {
+                    apellido_parte[j - inicio] = primer_apellido[j];
+                }
+
+                // Añadir el caracter nulo
+                apellido_parte[fin - inicio] = '\0';
+
+                // Verificar
+                if (!excepcion_compuestos(apellido_parte))
+                {
+                    // Copiar los primeros dos caracteres
+                    curp[0] = apellido_parte[0];
+                    curp[1] = apellido_parte[1];
+                    break; 
+                }
+
+                inicio = posiciones_vacias_apellido[i] + 1;
+            }
+        }
+
+        else
+        {
+            // Si no hay posiciones vacias no es compuesto
+            curp[0] = primer_apellido[0];
+            curp[1] = primer_apellido[1];
+        }
+
+
+        if(!verifica_vocal(primer_apellido))
+        {
+            curp[1] = 'X';
         }
     }
 
-    // Si hay posiciones vacías, el apellido es compuesto
-    if (cont > 0)
-    {
-        int inicio = 0;
-
-        // Dividir el apellido en partes basadas en las posiciones vacías
-        for (int i = 0; i <= cont; i++)
-        {
-            char apellido_parte[100];
-            
-            for(int j = inicio; j < posiciones_vacias_apellido[cont]; j++)
-            {
-                apellido_parte[j] = primer_apellido[j];
-            }
-
-            //analizar si coincide el apellidoparte con una exc de la lista
-            // en caso de coincidir el programa debe avanzar normalmente
-            //caso contrario debe detenerse pues encontro una palabra
-            //adecuada para usar
-
-            if(inicio = 0)
-            {
-                inicio = posiciones_vacias_apellido[0];
-            }
-
-            else
-            {
-                inicio = 0;
-            }
-
-        }
-    }
     else
     {
-        // Si no hay posiciones vacías, el apellido no es compuesto
-        curp[0] = primer_apellido[0];
-        curp[1] = primer_apellido[1];
+        curp[0] = 'X';
+        curp[1] = 'X';
     }
 
-    // Continuar con el segundo apellido
-    curp[2] = segundo_apellido[0];
+    //POSICION 2
+    //corresponde al primer elemento del segundo apellido
+
+    if(!verifica_vacio(segundo_apellido))
+    {
+        // Identificar posiciones vacias en el apellido compuesto
+        int posiciones_vacias_apellido[10] = {0};
+        int cont = 0;
+
+        for (int i = 0; segundo_apellido[i] != '\0'; i++)
+        {
+            if (segundo_apellido[i] == ' ')
+            {
+                posiciones_vacias_apellido[cont] = i;
+                cont++;
+            }
+        }
+
+        // Si hay posiciones vacias es compuesto
+        if (cont > 0)
+        {
+            int inicio = 0;
+            char apellido_parte[100] = {0}; 
+
+            // Dividir el apellido en partes basadas en las posiciones vacias
+            for (int i = 0; i <= cont; i++)
+            {
+                int fin = (i == cont ? strlen(segundo_apellido) : posiciones_vacias_apellido[i]);
+
+                for(int j = inicio; j < fin; j++)
+                {
+                    apellido_parte[j - inicio] = segundo_apellido[j];
+                }
+
+                // Añadir el caracter nulo
+                apellido_parte[fin - inicio] = '\0';
+
+                // Verificar
+                if (!excepcion_compuestos(apellido_parte))
+                {
+                    // Copiar los primeros dos caracteres
+                    curp[2] = apellido_parte[0];
+                    break; 
+                }
+
+                inicio = posiciones_vacias_apellido[i] + 1;
+            }
+        }
+
+        else
+        {
+            // Si no hay posiciones vacias no es compuesto
+            curp[2] = segundo_apellido[0];
+        }
+
+    }
+
+    else
+    {
+        //si esta vacio
+        curp[2] = 'X';
+    }
+
+
+    //POSICION 3
+    //corresponde al primer elemento del primer nombre
+    
 
     // Verificar si el primer nombre está en la lista de excepciones para el segundo nombre
     if (excepcion_mariajose(primer_nombre))
@@ -254,7 +371,7 @@ void genera_curp(char curp[], char primer_apellido[], char segundo_apellido[], c
     }
     else
     {
-        // Si no está en la lista de excepciones, usar el primer nombre
+        // Si no esta en la lista de excepciones usar el primer nombre
         curp[3] = primer_nombre[0];
     }
 
@@ -265,15 +382,51 @@ void genera_curp(char curp[], char primer_apellido[], char segundo_apellido[], c
     curp[7] = fecha[4];
     curp[8] = fecha[0];
     curp[9] = fecha[1];
+
+
+
     curp[10] = sexo[0];
+
+
+
     curp[11] = estado[0];
     curp[12] = estado[1];
+
+
+
     curp[13] = cat_die_i[0];
-    curp[14] = cat_die_i[1];
+    
+    if(verifica_vacio(segundo_apellido))
+    {
+        curp[14] = 'X';
+    }
+    else
+    {
+        curp[14] = cat_die_i[1];
+    }
+
     curp[15] = cat_die_i[2];
+
+
+
     curp[16] = diescisiete_i[0];
     curp[17] = diesciocho_i[0];
     curp[18] = '\0';
+
+
+    // Verificar si la persona no tiene ningun apellido
+    if (verifica_vacio(primer_apellido) && verifica_vacio(segundo_apellido))
+    {
+        strcpy(curp, "PERSONA DESCONOCIDA");
+        curp[20] = '\0';
+    }
+
+    // Verificar altisonantes
+    if (excepcion_altisonantes(curp))
+    {
+        curp[1] = 'X';
+    }
+
 }
 
 
@@ -281,24 +434,39 @@ void genera_curp(char curp[], char primer_apellido[], char segundo_apellido[], c
 
 void diesciocho(char fecha[], char diesciocho_i[])
 {
-    diesciocho_i[0] = 'X';
+    int anio = atoi(fecha + 6);
+
+    if (anio < 2000) {
+        diesciocho_i[0] = '0';
+    } else {
+        // Calcular el valor basado en la diferencia del año actual con 2000, 
+        // y dividir esa diferencia por 5 luego sumar 1 para compensar el año 2000
+        int valor = (anio - 2000) / 5 + 1;
+        
+        diesciocho_i[0] = valor + '0';
+    }
 }
+
 
 //*********************//
 
-void diescisiete(char fecha[], char diescisiete_i[])
-{
-
+void diescisiete(char fecha[], char diescisiete_i[]) {
     int anio = atoi(fecha + 6);
 
-    if (anio <= 1999 || anio > 1900)
-    {
+    if (anio <= 1999 || anio >= 1900) {
         diescisiete_i[0] = '0';
     }
 
-    if (anio <= 2024 || anio > 1999)
-    {
-        diescisiete_i[0] = 'A';
+    if (anio <= 2024 || anio > 1999) {
+        if (anio >= 2000 && anio <= 2010) {
+            diescisiete_i[0] = 'A';
+        }
+        if (anio >= 2011 && anio <= 2020) {
+            diescisiete_i[0] = 'B';
+        }
+        if (anio >= 2021 && anio <= 2030) {
+            diescisiete_i[0] = 'C';
+        }
     }
 }
 
@@ -317,6 +485,8 @@ void cat_die(char primer_apellido[], char segundo_apellido[], char primer_nombre
             cat_die_i[0] = primer_apellido[i];
             break;
         }
+
+        cat_die_i[0] = 'X';
     }
 
     for (int i = 1; i < long_sa; i++)
@@ -326,6 +496,8 @@ void cat_die(char primer_apellido[], char segundo_apellido[], char primer_nombre
             cat_die_i[1] = segundo_apellido[i];
             break;
         }
+
+        cat_die_i[1] = 'X';
     }
 
     for (int i = 1; i < long_pn; i++)
@@ -335,8 +507,47 @@ void cat_die(char primer_apellido[], char segundo_apellido[], char primer_nombre
             cat_die_i[2] = primer_nombre[i];
             break;
         }
+
+        cat_die_i[2] = 'X';
     }
 }
+
+
+//*********************//
+
+
+int verifica_vacio(char text[])
+{
+    int longitud = strlen(text);
+
+    if(longitud == 0)
+    {
+        return 1;
+    }
+
+    else
+    {
+        return 0;
+    }
+}
+
+
+//*********************//
+
+
+int verifica_vocal(char text[])
+{
+    if(text[1] == 'A' || text[1] == 'E' || text[1] == 'I' || text[1] == 'O' || text[1] == 'U')
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+    
+}
+
 
 //*********************//
 
@@ -526,59 +737,28 @@ int valifecha(char fecha[])
             fecha[longitud - 1] = '\0';
         }
 
-        // Verificar el formato
         if (longitud != 10 || fecha[2] != '/' || fecha[5] != '/')
         {
             printf("\nFormato de fecha incorrecto. Debe ser XX/XX/XXXX.\n");
             valido = 0;
-            break;
+            continue;
         }
 
-        // Verificar si la fecha contiene solo numeros
-        for (int i = 0; i < 10; i++)
-        {
-            if (i != 2 && i != 5 && (fecha[i] < '0' || fecha[i] > '9'))
-            {
-                printf("\nLa fecha debe contener solo numeros. \n");
-                valido = 0;
-                break;
-            }
-        }
-
-        // Obtener el dia, mes y año como enteros
-        int dia = (fecha[0] - '0') * 10 + (fecha[1] - '0');
-        int mes = (fecha[3] - '0') * 10 + (fecha[4] - '0');
-
+        int dia = atoi(fecha);
+        int mes = atoi(fecha + 3);
         int anio = atoi(fecha + 6);
 
-        // Verificar dias
-        if (dia < 1 || dia > 31)
+        if (dia < 1 || dia > 31 || mes < 1 || mes > 12 || anio < 1900 || anio > 2024)
         {
-            printf("\nEl dia debe estar en el rango del 01 al 31.\n");
+            printf("\nFecha fuera de rango. Introduce una fecha valida.\n");
             valido = 0;
-            break;
-        }
-
-        // Verificar mes
-        if (mes < 1 || mes > 12)
-        {
-            printf("\nEl mes debe estar en el rango del 01 al 12.\n");
-            valido = 0;
-            break;
-        }
-
-        // Verificar año
-        if (anio < 1900 || anio > 2024)
-        {
-            printf("\nEl a%co debe estar en el rango de 1900 a 2024.\n", 164);
-            valido = 0;
-            break;
         }
 
     } while (!valido);
 
     return 1;
 }
+
 
 int valitext(char text[])
 {
@@ -769,7 +949,7 @@ void mensajeria(int estado)
     case 5:
         printf("|-------------------------------------------------------------------------------------------- |\n");
         printf("|  Introduce tu FECHA de nacimiento:                                                          |\n");
-        printf("|  FORMATO VALIDO: XX/XX/XXXX                                                                 |\n");
+        printf("|  FORMATO VALIDO: DD/MM/AAAA                                                                 |\n");
         printf("|  AVISO: Solo puedes ingresar numeros y el diagonal                                          |\n");
         printf("|-------------------------------------------------------------------------------------------- |\n");
         break;
@@ -821,5 +1001,6 @@ void mensajeria(int estado)
         printf("|  - 01: PARA MUJER  02: HOMBRE  -                                                            |\n");
         printf("|-------------------------------------------------------------------------------------------- |\n");
         break;
+
     }
 }
