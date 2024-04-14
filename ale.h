@@ -17,7 +17,7 @@ int valitext(char text[]);
 void valiestado(int cod_estado, char estado[]);
 void valisexo(int cod_sexo, char sexo[]);
 
-void cat_die(char primer_apellido[], char segundo_apellido[], char primer_nombre[], char cat_die_i[]);
+void cat_die(char primer_apellido[], char segundo_apellido[], char primer_nombre[], char segundo_nombre[], char cat_die_i[]);
 void diescisiete(char fecha[], char diescisiete_i[]);
 void diesciocho(char fecha[], char diesciocho_i[]);
 
@@ -31,6 +31,9 @@ int excepcion_altisonantes(char curp[]);
 int verifica_vocal(char text[]);
 int verifica_vacio(char text[]);
 int verifica_xxx(char curp[]);
+int verifica_vocal_interna(char text[]);
+
+char retorna_consonante_interna(char text[]);
 
 
 //  *** DESARROLLO DE LAS FUNCIONES  ******
@@ -143,7 +146,7 @@ void comenzar(char curp[], char primer_apellido[], char segundo_apellido[], char
     mensajeria(7);
     valisexo(cod_sexo, sexo);
 
-    cat_die(primer_apellido, segundo_apellido, primer_nombre, cat_die_i); 
+    cat_die(primer_apellido, segundo_apellido, primer_nombre, segundo_nombre, cat_die_i); 
     diescisiete(fecha, diescisiete_i);
     diesciocho(fecha, diesciocho_i);
 
@@ -265,10 +268,19 @@ void genera_curp(char curp[], char primer_apellido[], char segundo_apellido[], c
                 // Verificar
                 if (!excepcion_compuestos(apellido_parte))
                 {
-                    // Copiar los primeros dos caracteres
-                    curp[0] = apellido_parte[0];
-                    curp[1] = apellido_parte[1];
-                    break; 
+                    
+                    if (!verifica_vocal_interna(apellido_parte))
+                    {
+                        curp[0] = apellido_parte[0];
+                        curp[1] = 'X';
+                    }
+                    else
+                    {
+                        // Copiar los primeros dos caracteres
+                        curp[0] = apellido_parte[0];
+                        curp[1] = apellido_parte[1];
+                        break; 
+                    }
                 }
 
                 inicio = posiciones_vacias_apellido[i] + 1;
@@ -335,7 +347,7 @@ void genera_curp(char curp[], char primer_apellido[], char segundo_apellido[], c
                 // Verificar
                 if (!excepcion_compuestos(apellido_parte))
                 {
-                    // Copiar los primeros dos caracteres
+                    
                     curp[2] = apellido_parte[0];
                     break; 
                 }
@@ -394,7 +406,61 @@ void genera_curp(char curp[], char primer_apellido[], char segundo_apellido[], c
 
 
 
-    curp[13] = cat_die_i[0];
+
+    //POSICION 13
+
+
+        // Identificar posiciones vacias en el apellido compuesto
+        int posiciones_vacias_apellido[10] = {0};
+        int cont = 0;
+
+        for (int i = 0; primer_apellido[i] != '\0'; i++)
+        {
+            if (primer_apellido[i] == ' ')
+            {
+                posiciones_vacias_apellido[cont] = i;
+                cont++;
+            }
+        }
+
+        // Si hay posiciones vacias es compuesto
+        if (cont > 0)
+        {
+            int inicio = 0;
+            char apellido_parte[100] = {0}; 
+
+            // Dividir el apellido en partes basadas en las posiciones vacias
+            for (int i = 0; i <= cont; i++)
+            {
+                int fin = (i == cont ? strlen(primer_apellido) : posiciones_vacias_apellido[i]);
+
+                for(int j = inicio; j < fin; j++)
+                {
+                    apellido_parte[j - inicio] = primer_apellido[j];
+                }
+
+                // Añadir el caracter nulo
+                apellido_parte[fin - inicio] = '\0';
+
+                // Verificar
+                if (!excepcion_compuestos(apellido_parte))
+                {
+                    
+                    curp[13] = retorna_consonante_interna(apellido_parte);
+                    break; 
+                }
+
+                inicio = posiciones_vacias_apellido[i] + 1;
+            }
+        }
+
+        else
+        {
+            // Si no hay posiciones vacias no es compuesto
+            curp[13] = cat_die_i[0];
+        }
+
+    
     
     if(verifica_vacio(segundo_apellido))
     {
@@ -404,6 +470,10 @@ void genera_curp(char curp[], char primer_apellido[], char segundo_apellido[], c
     {
         curp[14] = cat_die_i[1];
     }
+
+    
+    // POSICION 15
+    
 
     curp[15] = cat_die_i[2];
 
@@ -472,7 +542,7 @@ void diescisiete(char fecha[], char diescisiete_i[]) {
 
 //*********************//
 
-void cat_die(char primer_apellido[], char segundo_apellido[], char primer_nombre[], char cat_die_i[])
+void cat_die(char primer_apellido[], char segundo_apellido[], char primer_nombre[], char segundo_nombre[], char cat_die_i[])
 {
     int long_pa = strlen(primer_apellido);
     int long_sa = strlen(segundo_apellido);
@@ -502,6 +572,21 @@ void cat_die(char primer_apellido[], char segundo_apellido[], char primer_nombre
 
     for (int i = 1; i < long_pn; i++)
     {
+
+        // Verificar si el primer nombre está en la lista de excepciones para usar el segundo nombre
+        if (excepcion_mariajose(primer_nombre))
+        {
+
+            if (segundo_nombre[i] != 'A' && segundo_nombre[i] != 'E' && segundo_nombre[i] != 'I' && segundo_nombre[i] != 'O' && segundo_nombre[i] != 'U')
+            {
+                cat_die_i[2] = segundo_nombre[i];
+                break;
+            }
+
+            cat_die_i[2] = 'X';
+        }
+
+
         if (primer_nombre[i] != 'A' && primer_nombre[i] != 'E' && primer_nombre[i] != 'I' && primer_nombre[i] != 'O' && primer_nombre[i] != 'U')
         {
             cat_die_i[2] = primer_nombre[i];
@@ -512,6 +597,57 @@ void cat_die(char primer_apellido[], char segundo_apellido[], char primer_nombre
     }
 }
 
+
+//*********************//
+
+
+char retorna_consonante_interna(char text[])
+{
+    char consonante = '\0';
+    char vocales[] = "AEIOU";
+
+    for (int i = 1; text[i] != '\0'; i++)
+    {
+        int es_vocal = 0;
+
+        for (int j = 0; vocales[j] != '\0'; j++)
+        {
+            if (toupper(text[i]) == vocales[j])
+            {
+                es_vocal = 1;
+                break;
+            }
+        }
+
+        if (!es_vocal && isalpha(text[i]))
+        {
+            consonante = toupper(text[i]);
+            break;
+        }
+    }
+
+    return consonante;
+}
+
+
+//*********************//
+
+
+
+int verifica_vocal_interna(char text[])
+{
+    char vocales[] = "AEIOU";
+    int i, j;
+
+    for (i = 1; text[i] != '\0'; i++) {
+        for (j = 0; vocales[j] != '\0'; j++) {
+            if (text[i] == vocales[j]) {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
 
 //*********************//
 
