@@ -1,6 +1,6 @@
 // CYNDY ALEJANDRA MIRANDA LARA
 // DESC: CURP
-// Fecha: 04 de abril TERMINADO:
+// Fecha: 04 de abril TERMINADO: 14 de abril
 // CAML_ACT09_3-4.cpp
 
 #include <stdio.h>
